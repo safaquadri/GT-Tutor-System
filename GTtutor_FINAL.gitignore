@@ -1,0 +1,1371 @@
+import pymysql
+from tkinter import *
+
+class PhaseIII:
+
+################################################ LOGIN  ########################################################################
+    def __init__(self, win):
+        self.win = win
+        self.win.title('GTT Login')
+
+        Label(win, text = "Enter GTID").grid(row = 0, column = 0)
+        self.GTID = Entry(win)
+        self.GTID.grid(row= 0, column = 1)
+
+        Label(win, text = "Enter Password").grid(row= 1, column = 0)
+        self.Passwd = Entry(win)
+        self.Passwd.grid(row = 1, column = 1)
+
+        OK = Button(win, text = "OK", command = self.goingToMainMenu).grid(row = 2, column = 0 )
+
+    def Connect(self):
+        try:
+            db=pymysql.connect(host="academic-mysql.cc.gatech.edu", passwd="__YJY0KE", user="cs4400_Group_8", db="cs4400_Group_8")
+
+        except:
+            messagebox.showwarning("Error", "Could not connect to server. Please check your connection.")
+            return None
+        return db
+
+    def goingToMainMenu(self):
+        Gtid = self.GTID.get()
+        passwd = self.Passwd.get()
+        tuple1 = (Gtid, passwd)
+        try:
+            db = self.Connect()
+        except:
+            return None
+        if Gtid=='':
+            messagebox.showwarning("Error", "Please enter GT ID.")
+            return
+        elif passwd=='':
+            result=messagebox.showwarning("Error", "Please enter password.")
+            return
+            
+        sql = ("Select * from User WHERE GTID = %s and Password = %s")
+        cursor = db.cursor()
+        a=cursor.execute(sql,(Gtid,passwd))
+        c=db.cursor()
+        bList=[]
+        sql2 = "SELECT * FROM Student WHERE Stud_GTID = %s"
+        x=c.execute(sql2,(Gtid))
+        bList.append(x)
+        sql3 = "SELECT * FROM Professor WHERE Prof_GTID = %s"
+        y=c.execute(sql3,(Gtid))
+        bList.append(y)
+        sql4 = "SELECT * FROM Administrator WHERE Admin_GTID = %s"
+        z=c.execute(sql4,(Gtid))
+        bList.append(z)
+        sql5 = "SELECT * FROM Grad WHERE Grad_GTID = %s"
+        self.u=c.execute(sql5,(Gtid))
+
+        if a==1 and bList==[1,0,0]:
+            self.mainMenu()
+
+        elif a==1 and bList==[0,1,0]:
+            self.mainMenuProfessor()
+
+        elif a==1 and bList==[0,0,1]:
+            self.mainMenuAdmin()
+
+        else:
+            messagebox.showwarning("Error" , "Invalid Username and/or Password")
+
+
+
+
+
+
+
+################################################ MAIN MENUS  ########################################################################
+            
+    def mainMenu(self):
+##        self.win.withdraw()
+        self.mainG = Toplevel()
+        self.mainG.title('GTT MAIN MENU') 
+
+        Label(self.mainG, text = "Academic Year 2014").grid(row =0, column = 0)
+        Label(self.mainG, text = "Student Options").grid(row =1, column = 0)
+        searchT = Button(self.mainG, text = "Search/Schedule Tutor", command = self.search).grid(row = 2 , column = 1)
+        rateT = Button(self.mainG, text = "Rate a Tutor", command =self.RateATutor).grid(row = 2 , column = 2)
+
+        Label(self.mainG, text = "Tutor Options").grid(row =3, column = 0)
+        Apply = Button(self.mainG, text = "Apply", command = self.Apply).grid(row = 4 , column = 1)
+        findSd = Button(self.mainG, text = "Find My Schedule", command = self.FindTutorSchedule).grid(row = 4 , column = 2)
+        
+        Label(self.mainG, text="").grid(row=5)
+        Label(self.mainG,text="Note: Only undergraduate students can schedule for a tutor and rate a tutor").grid(row=6,columnspan=3)
+        
+    def mainMenuProfessor(self):
+##        self.win.withdraw()
+        self.mainProf = Toplevel()
+        self.mainProf.title('Professor Options')
+
+        Label(self.mainProf, text = "Academic Year 2014").grid(row =0, column = 0)
+        Label(self.mainProf, text = "Professor Options").grid(row =2, column = 0)
+        Recc = Button(self.mainProf, text = "Add Recommendation", command= self.Recommend).grid(row = 3 , column = 0)
+
+    def mainMenuAdmin(self):
+##        self.win.withdraw()
+        self.mainAdmin = Toplevel()
+        self.mainAdmin.title('Administrator Options')
+        
+        Label(self.mainAdmin, text = "Academic Year 2014").grid(row =0, column = 0)
+        Label(self.mainAdmin, text = "Admin Options").grid(row = 2, column = 0)
+        sum1 = Button(self.mainAdmin, text = "Summary 1", width =10, command= self.adminSum1).grid(row=3, column = 0)
+        sum2 = Button(self.mainAdmin, text = "Summary 2", width = 10, command = self.adminSum2).grid(row = 3, column = 1)
+
+
+
+
+
+
+
+################################################ TUTOR OPTIONS  ########################################################################
+
+    def search(self):
+        if self.u==1: #if the student is a grad student, they can't schedule for a tutor
+            messagebox.showwarning("Error","You must be an undergraduate student to schedule a tutor.")
+            return None
+##        self.mainG.withdraw()
+        self.search = Toplevel()
+        self.search.title('Tutor Search')
+
+        frame1 = Frame(self.search)
+        frame1.grid(row=0, columnspan = 5)
+
+        Label(frame1, text = "Course").grid(row= 0, column= 0, sticky = W)
+        Label(frame1, text = "School").grid(row= 0, column= 1, sticky = W)
+        Label(frame1, text = "Number").grid(row= 0, column= 2, sticky = W)
+        Label(frame1, text = "Semester").grid(row= 0, column= 3, sticky = W)
+        
+        self.school = Entry(frame1)
+        self.school.grid(row= 1, column =1, sticky = W)
+
+        self.num = Entry(frame1)
+        self.num.grid(row=1, column=2, sticky = W)
+
+        self.sem = Entry(frame1)
+        self.sem.grid(row =1, column = 3, sticky =W)
+
+        Label(self.search, text = "AVAILABILITY   Note: Tutor sessions can only be scheduled for 1 hour per week for a given course.").grid(row= 2, column= 1)
+
+        frame2 = Frame(self.search)
+        frame2.grid(row =3, columnspan = 5)
+
+        Label(frame2, text = "Day").grid(row= 0, column= 0, sticky = W)
+        Label(frame2, text = "Time").grid(row= 0, column= 1, sticky = W)
+
+        self.d1 = Entry(frame2)
+        self.d1.grid(row =1, column = 0)
+        self.d2 = Entry(frame2)
+        self.d2.grid(row =2, column = 0)
+        self.d3 = Entry(frame2)
+        self.d3.grid(row =3, column = 0)
+        self.d4 = Entry(frame2)
+        self.d4.grid(row =4, column = 0)
+        self.d5 = Entry(frame2)
+        self.d5.grid(row =5, column = 0)
+        
+        self.t1 = Entry(frame2)
+        self.t1.grid(row =1, column = 1)
+        self.t2 = Entry(frame2)
+        self.t2.grid(row =2, column = 1)
+        self.t3 = Entry(frame2)
+        self.t3.grid(row =3, column = 1)
+        self.t4 = Entry(frame2)
+        self.t4.grid(row =4, column = 1)
+        self.t5 = Entry(frame2)
+        self.t5.grid(row =5, column = 1)
+
+        self.Button = Button(self.search, text = "OK", width = 10, command=self.ShowTAs)
+        self.Button.grid( row =4 , column =0)
+
+    def ShowTAs(self):
+        sem = self.sem.get()
+        frame3 = Frame(self.search)
+        frame3.grid(row = 5, columnspan = 5)
+
+        Label(frame3, text = "Available Tutors").grid(row= 0, column= 2, sticky = W)
+
+        frame4 = Frame(self.search)
+        frame4.grid(row= 7, columnspan =7)
+
+        Label(frame4, text = "First Name").grid(row= 0, column= 0)
+        Label(frame4, text = "Last Name").grid(row= 0, column= 1)
+        Label(frame4, text = "Email", width =20).grid(row= 0, column= 2)
+        Label(frame4, text = "Avg Prof Ratings").grid(row= 0, column= 3)
+        Label(frame4, text = "# Professors").grid(row= 0, column= 4)
+        Label(frame4, text = "Avg Student Ratings").grid(row= 0, column= 5)
+        Label(frame4, text = "# Student").grid(row= 0, column= 6)
+
+        try:
+            db = self.Connect()
+        except:
+            return None
+        cursor = db.cursor()
+        day = [self.d1, self.d2, self.d3, self.d4, self.d5]
+        time = [self.t1, self.t2, self.t3, self.t4, self.t5]
+        school = self.school.get()
+        num = self.num.get()
+
+        alist= []
+        self.later = []
+        for i in range(5):
+            d = day[i].get()
+            t = time[i].get()
+##            print(d,t)
+            if d != "" and t != "":
+                dt = (d,t)
+                self.later.append(dt)
+                sql = 'SELECT distinct(Tutors.Tutor_GTID) FROM TutorTimeSlots AS TTS, Tutors, Tutor WHERE (WEEKDAY =%s AND TIMES = %s and SEMESTER = %s) AND (TTS.TUTOR_GTID = Tutor.TUTOR_GTID) AND (Tutors.TUTOR_GTID = Tutor.TUTOR_GTID) AND (COURSE_NUM = %s AND SCHOOL = %s)' 
+                cursor.execute(sql, (d, t,sem, num, school))
+                for j in cursor:
+                    alist.append(j[0])
+##                    print(j)
+        #print(alist)
+        #print(self.later)
+                    
+        firstnames = []
+        for i in range(len(alist)):
+            gtid = alist[i]
+            sql1 = 'select FirstName from Student where STUD_GTID = "{0}"'.format(gtid)
+            #sql2 = 'select LastName from Student where STUD_GTID = "{0}"'.format(gtid)
+            cursor.execute(sql1)
+            for i in cursor:
+                firstnames.append(i[0])
+        lastnames = []
+        for i in range(len(alist)):
+            gtid = alist[i]
+            sql2 = 'select LastName from Student Where STUD_GTID = "{0}"'.format(gtid)
+            cursor.execute(sql2)
+            for i in cursor:
+                lastnames.append(i[0])
+
+        emails = []
+        for i in range(len(alist)):
+            gtid = alist[i]
+            sql3 = 'select Email from Student Where STUD_GTID = "{0}"'.format(gtid)
+            cursor.execute(sql3)
+            for i in cursor:
+                emails.append(i[0])
+
+        avg_prate = [] 
+        for i in range(len(alist)):
+            gtid = alist[i]
+            avg_prof = 'select avg(NumericRating) from Recommends Where TUTOR_GTID = "{0}"'.format(gtid)
+            cursor.execute(avg_prof)
+            for i in cursor:
+                avg_prate.append(i[0])
+
+        count_p= []
+        for i in range(len(alist)):
+            gtid = alist[i]
+            count = 'SELECT COUNT(NumericRating) from Recommends WHERE TUTOR_GTID = "{0}"'.format(gtid)
+            cursor.execute(count)
+            for i in cursor:
+                count_p.append(i[0])
+
+        avg_srate= []
+        for i in range(len(alist)):
+            gtid = alist[i]
+            avg_stud = 'select avg(NUM_RATE) from Rating Where TUTOR_GTID = "{0}"'.format(gtid)
+            cursor.execute(avg_stud)
+            for i in cursor:
+                avg_srate.append(i[0])
+
+        count_s = []
+        for i in range(len(alist)):
+            gtid = alist[i]
+            count = 'SELECT COUNT(NUM_RATE) from Rating WHERE TUTOR_GTID = "{0}"'.format(gtid)
+            cursor.execute(count)
+            for i in cursor:
+                count_s.append(i[0])
+                
+        self.finaltuples = []
+        alist = list(set(alist))
+        for i in range(len(alist)):
+            value = int(i)
+            tuple1 = (firstnames[i],lastnames[i],emails[i], avg_prate[i],count_p[i], avg_srate[i], count_s[i], i, alist[i])
+            if count_p[i] != 0:
+                self.finaltuples.append(tuple1)
+                Label(frame4, text = firstnames[i]).grid(row = i+1, column = 0)
+                Label(frame4, text = lastnames[i]).grid(row = i+1, column = 1)
+                Label(frame4, text = emails[i]).grid(row = i+1, column = 2)
+                Label(frame4, text = avg_prate[i]).grid(row = i+1, column = 3)
+                Label(frame4, text = count_p[i]).grid(row = i+1, column = 4)
+                Label(frame4, text = avg_srate[i]).grid(row = i+1, column = 5)
+                Label(frame4, text = count_s[i]).grid(row = i+1, column = 6)
+            elif count_p[i] == 0:
+                pass
+            
+        for i in range(len(day)):
+            day[i].config(state='readonly')
+            time[i].config(state = 'readonly')
+
+        self.school.config(state = 'readonly')
+        self.num.config(state = 'readonly')
+        self.Button.config(state = 'disabled')
+
+        Button(self.search, text = "Schedule a Tutor", command = self.Schd).grid(row = 8, column = 0)
+        Button(self.search, text = "Cancel", command= self.Cancel).grid(row = 8, column = 2)
+
+    def Cancel(self):
+        self.search.withdraw()
+        self.mainG.deiconify()
+
+
+#  ________________________________________________
+        
+    def Schd(self):
+##        self.search.withdraw()
+        self.sched = Toplevel()
+        self.sched.title('Schedule A Tutor')
+        school = self.school.get()
+        num = self.num.get()
+        semester = self.sem.get()
+        self.select = StringVar()
+        self.select.set("0")
+        GTID = self.GTID.get()
+
+        try:
+            db = self.Connect()
+        except:
+            return None
+
+        cursor = db.cursor()
+        omg = db.cursor()
+        endtuples = []
+
+        for i in range(len(self.finaltuples)):
+            fn = self.finaltuples[i][0]
+            ln = self.finaltuples[i][1]
+            em = self.finaltuples[i][2]
+            b = self.finaltuples[i][8]
+            #print(b)
+            sql_a = "select * from TutorTimeSlots where TUTOR_GTID = %s AND SEMESTER = %s"
+            cursor.execute(sql_a, (b,semester))
+            for i in cursor:
+                #print(i)
+                tup = [fn, ln, em, i[0],i[1],i[2],i[3]]
+                endtuples.append(tup)
+        self.end = []
+        for i in range(len(self.later)):
+            for j in range(len(endtuples)):
+                if endtuples[j][5] == self.later[i][0] and endtuples[j][6] == self.later[i][1]:
+                    self.end.append(endtuples[j])
+        t = "Select your Tutor for {0} {1}".format(school, num)
+
+        frame4 = Frame(self.sched)
+        frame4.grid(row =1 , columnspan = 7)
+
+        Label(frame4, text = "First Name").grid(row= 0, column= 0)
+        Label(frame4, text = "Last Name").grid(row= 0, column= 1)
+        Label(frame4, text = "Email", width =20).grid(row= 0, column= 2)
+        Label(frame4, text = "Day").grid(row= 0, column= 3)
+        Label(frame4, text = "Time").grid(row= 0, column= 4)
+        Label(frame4, text = "Select").grid(row = 0 , column =5)
+
+        Label(self.sched, text = t).grid(row = 0, column = 1)
+
+        for i in range(len(self.end)):
+            a = self.end[i][2]
+            b = self.end[i][5]
+            c = self.end[i][6]
+
+            astr  = "{0}, {1}, {2}".format(a,b,c)
+
+            Label(frame4, text = self.end[i][0]).grid(row = i+1, column = 0)
+            Label(frame4, text = self.end[i][1]).grid(row = i+1, column = 1)
+            Label(frame4, text = self.end[i][2]).grid(row = i+1, column = 2)
+            Label(frame4, text = self.end[i][5]).grid(row = i+1, column = 3)
+            Label(frame4, text = self.end[i][6]).grid(row = i+1, column = 4)
+
+            Radiobutton(frame4, variable = self.select, value = astr).grid(row = i +1, column = 7, sticky =W)
+            
+        Button(self.sched, text = "OK", width = 10, command = self.OKsched).grid(row = 2, column = 0)
+        Button(self.sched, text = "Cancel", width = 10, command = self.cancelSched).grid(row = 2, column = 2)
+
+    def OKsched(self):
+        try:
+            db = self.Connect()
+        except:
+            return None
+        cursor = db.cursor()
+        rad_tup = self.select.get()
+        gtid = self.GTID.get()
+        school = self.school.get()
+        num = self.num.get()
+        sem = self.sem.get()
+
+        for i in range(len(self.end)):
+            a = self.end[i][2]
+            b = self.end[i][5]
+            d = self.end[i][3]
+            c = self.end[i][6]
+
+            bstr  = "{0}, {1}, {2}".format(a,b,c)
+            if rad_tup == bstr:
+                sqlh = 'INSERT INTO Hires (UG_GTID, TUTOR_GTID, SCHOOL, COURSE_NUM, TIME, WEEKDAY, SEMESTER) values(%s, %s, %s, %s, %s, %s, %s)'
+                cursor.execute(sqlh, (gtid, d, school,num, c, b, sem))
+
+        self.sched.withdraw()
+        self.mainMenu()
+
+    def cancelSched(self):
+        self.sched.withdraw()
+        self.mainG.deiconify()
+
+
+#_______________________________________________
+
+    def RateATutor(self):
+        if self.u==1: #Only undergrad can rate a tutor, since only undergrad are experiencing a tutoring
+            messagebox.showwarning("Error","Only undergraduate students can rate a tutor.")
+            return None
+##        self.mainG.withdraw()
+        self.Rate = Toplevel()
+        self.Rate.title('Rate a Tutor')
+
+        self.rv = StringVar()
+        self.rv.set("0")
+        frame1 = Frame(self.Rate)
+        frame1.grid(row=0, columnspan = 5)
+
+        Label(frame1, text = "School").grid(row= 0, column= 1, sticky = W)
+        Label(frame1, text = "Number").grid(row= 0, column= 2, sticky = W)
+        Label(frame1, text = "Tutor Name").grid(row = 0, column = 3, sticky = W)
+        Label(frame1, text = "Semester").grid(row=0,column=4,sticky=W)
+        self.rateschool = Entry(frame1)
+        self.rateschool.grid(row= 1, column =1, sticky = W)
+        self.Rate_num = Entry(frame1)
+        self.Rate_num.grid(row=1, column=2, sticky = W)
+        self.TutorName = Entry(frame1)
+        self.TutorName.grid(row = 1, column = 3, sticky = W)
+        self.semesterTaken=Entry(frame1)
+        self.semesterTaken.grid(row=1,column=4,sticky=W)
+
+        Label(self.Rate, text = "Descriptive Evaluation").grid(row = 1, column = 0)
+        self.DEval = Entry(self.Rate, width = 100)
+        self.DEval.grid(row = 2, column = 0)
+        
+        Label(self.Rate, text = "Numeric Evaluation").grid(row = 3, column = 0)
+        self.r1 = Radiobutton(self.Rate, variable = self.rv, value = "1")
+        self.r1.grid(row = 7, column = 1, sticky =W)
+
+        self.r2 = Radiobutton(self.Rate, variable = self.rv, value = "2")
+        self.r2.grid(row = 6, column = 1 , sticky =W)
+
+        self.r3 = Radiobutton(self.Rate, variable = self.rv, value = "3")
+        self.r3.grid(row = 5, column = 1, sticky =W)
+
+        self.r4 = Radiobutton(self.Rate, variable = self.rv, value = "4")
+        self.r4.grid( row = 4, column =1, sticky =W)
+
+        Label(self.Rate, text = "4 Highly Recommended").grid(row = 4, column = 0, sticky =W)
+        Label(self.Rate, text = "3 Recommend").grid(row = 5, column = 0, sticky =W)
+        Label(self.Rate, text = "2 Recommend (with reservations)").grid(row = 6, column = 0, sticky =W)
+        Label(self.Rate, text = "1 Do Not Recommend").grid(row = 7, column = 0, sticky =W)
+
+        Button(self.Rate, text = "Ok",width = 10, command = self.rateOK).grid(row = 8, column = 0)
+        Button(self.Rate, text = "Cancel", width = 10, command= self.rateCancel).grid(row=8, column =2)
+
+    def rateOK(self):  
+        try:
+            db = self.Connect()
+        except:
+            return None
+
+        gtid = self.GTID.get()
+
+        a = self.TutorName.get()
+        b = self.rateschool.get()
+        c = self.Rate_num.get()
+        d = self.DEval.get()
+        e = self.semesterTaken.get()
+        cursor = db.cursor()
+        num = 0 
+        if self.rv.get() == "1":
+            num = '1'
+        elif self.rv.get() == "2":
+            num = '2'
+        elif self.rv.get() == "3":
+            num = '3.0'
+        elif self.rv.get() == "4":
+            num = '4.0'
+            
+        namelist = a.split()
+        tutorid = ''
+        SQL = 'select STUD_GTID FROM Student WHERE FirstName = %s and LastName = %s'
+        cursor.execute(SQL, (namelist[0], namelist[1]))
+        for i in cursor:
+            tutorid = tutorid + i[0]
+
+        sqlj="SELECT * FROM Rating WHERE UG_GTID = %s AND Tutor_GTID = %s AND SCHOOL=%s AND COURSE_NUM=%s AND SEMESTER=%s"
+        q=cursor.execute(sqlj,(gtid,tutorid,b,c,e))
+
+        if q!=0:
+            messagebox.showwarning("Error","You may only rate a tutor once.")
+            return None
+
+        if a=="" or b=="" or c=="" or num ==0 or e==0:
+            messagebox.showwarning("Error","Please fill in every entry.")
+            return None
+        
+        sqlh = 'select TUTOR_GTID from Hires where UG_GTID = %s and TUTOR_GTID = %s and COURSE_NUM = %s and SCHOOL = %s and SEMESTER=%s'
+        x=cursor.execute(sqlh, (gtid,tutorid, c, b,e))
+        if x==0:
+            messagebox.showwarning("Error","You may only rate a tutor who has tutored you.")
+            return None
+
+        sql = "INSERT INTO Rating (UG_GTID, TUTOR_GTID, SCHOOL, COURSE_NUM, DESCRIPTIVE_EVAL, NUM_RATE, SEMESTER) values (%s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(sql, (gtid,tutorid,b,c,d, num, e))
+
+        self.Rate.withdraw()
+        self.mainMenu()
+
+    def rateCancel(self):
+##        self.Rate.withdraw()
+        self.mainG.deiconify()
+
+################################################ TUTOR OPTIONS  ########################################################################
+
+    def Apply(self):
+
+##        self.mainG.withdraw()
+        self.Apply = Toplevel()
+
+        try:
+            db = self.Connect()
+        except:
+            return None
+        
+        self.Apply.title('Apply')
+        self.grad = StringVar()
+        self.grad.set("0")
+        Label(self.Apply, text = "Georgia Tech Tutor Application").grid(row = 0, column = 1, sticky =EW)
+        Label(self.Apply, text = "Student Information").grid(row = 1, column = 0, sticky = W)
+
+        frame1 = Frame(self.Apply)
+        frame1.grid(row=2, columnspan = 5)
+        
+        Label(frame1, text = "GT ID").grid(row= 0, column= 1, sticky = W)
+        Label(frame1, text = "First Name").grid(row= 0, column= 2, sticky = W)
+        Label(frame1, text = "Last Name").grid(row = 0, column = 3, sticky = W)
+
+        self.A_GTID = Entry(frame1)
+        self.A_GTID.grid(row= 1, column =1, sticky = W)
+
+        self.FN = Entry(frame1)
+        self.FN.grid(row=1, column=2, sticky = W)
+
+        self.LN = Entry(frame1)
+        self.LN.grid(row = 1, column = 3, sticky = W)
+
+        Label(frame1, text = "Email").grid(row= 2, column= 1, sticky = W)
+        Label(frame1, text = "Telephone").grid(row= 2, column= 2, sticky = W)
+        Label(frame1, text = "GPA").grid(row = 2, column = 3, sticky = W)
+
+        self.Email = Entry(frame1)
+        self.Email.grid(row= 3, column =1, sticky = W)
+
+        self.Tphone = Entry(frame1)
+        self.Tphone.grid(row=3, column=2, sticky = W)
+
+        self.GPA = Entry(frame1)
+        self.GPA.grid(row = 3, column = 3, sticky = W)
+
+        Label(frame1, text = "Undergraduate").grid(row= 4, column= 1, sticky = W)
+        UG = Radiobutton(frame1, variable = self.grad, value = "UG")
+        UG.grid(row = 4, column=2, sticky = W)
+        
+        Label(frame1, text = "Grad").grid(row= 4, column= 3, sticky = W)
+        Grad = Radiobutton(frame1, variable = self.grad, value = "G")
+        Grad.grid(row = 4, column=4, sticky = W)
+
+        self.GTA_1 = IntVar()
+        self.GTA_2 = IntVar()
+        self.GTA_3 = IntVar()
+        self.GTA_4 = IntVar()
+        self.GTA_5 = IntVar()
+        self.GTA_6 = IntVar()
+        self.GTA_7 = IntVar()
+        self.c1 = IntVar()
+        self.c2 = IntVar()
+        self.c3 = IntVar()
+        self.c4 = IntVar()
+        self.c5 = IntVar()
+        self.c6 = IntVar()
+        self.c7 = IntVar()
+
+        Label(self.Apply, text = "Semester").grid(row = 3, column = 1)
+        self.semester = Entry(self.Apply)
+        self.semester.grid(row = 3, column = 2)
+
+        Label(self.Apply, text = "Courses").grid(row = 3, column = 0, sticky = W)
+
+        frame2 = Frame(self.Apply, borderwidth = 4)
+        frame2.grid(row=4, columnspan = 5)
+
+        Label(frame2, text = "School", width = 10).grid(row= 0, column= 1, sticky = W)
+        Label(frame2, text = "Number", width = 10).grid(row= 0, column= 2, sticky = W)
+        Label(frame2, text= "Choose", width = 10).grid(row = 0, column = 3, sticky =W)
+        Label(frame2, text = "GTA", width = 10).grid(row = 0, column = 4, sticky = W)
+
+        cursor = db.cursor()
+        self.course = []
+        sql_c = 'select * from Course'
+        cursor.execute(sql_c)
+        for i in cursor:
+            tuplec = (i[0],i[1])
+            self.course.append(tuplec)
+        coursevar = [self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7]
+        gta = [self.GTA_1, self.GTA_2, self.GTA_3, self.GTA_4, self.GTA_5, self.GTA_6, self.GTA_7]
+
+        for i in range(len(self.course)):
+            Label(frame2, text = self.course[i][0]).grid(row = i+1, column = 1, sticky = W)
+            Label(frame2, text = self.course[i][1]).grid(row = i+1, column= 2,  sticky = W)
+            Checkbutton(frame2, variable = coursevar[i]).grid(row = i +1, column = 3, sticky = W)
+            Checkbutton(frame2, variable = gta[i]).grid(row = i+1, column = 4, sticky  =W)
+
+        #END OF COURSES FOR TUTORING
+        times = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm"]
+
+        #Monday
+        self.M9 = IntVar()
+        self.M10 = IntVar()
+        self.M11 = IntVar()
+        self.M12 = IntVar()
+        self.M1 = IntVar()
+        self.M2 = IntVar()
+        self.M3 = IntVar()
+        self.M4 = IntVar()
+        M = [self.M9, self.M10, self.M11, self.M12,self.M1,self.M2, self.M3, self.M4]
+
+        frame3 = Frame(self.Apply)
+        frame3.grid(row=6, columnspan = 5)
+        Label(frame3, text = "AVAILABLE DAYS/TIMES    Note: For each selected course, you must have at least 3 hours of availability per week").grid(row = 0, columnspan = 9, sticky = W)
+        Label(frame3, text = "Monday").grid(row= 1, column= 1, sticky = W)
+
+        for i in range(8):
+            Checkbutton(frame3, variable = M[i], text= times[i]).grid(row=11, column = i, sticky=W) 
+
+        #Tuesday
+        self.T9 = IntVar()
+        self.T10 = IntVar()
+        self.T11 = IntVar()
+        self.T12 = IntVar()
+        self.T1 = IntVar()
+        self.T2 = IntVar()
+        self.T3 = IntVar()
+        self.T4 = IntVar()
+        T = [self.T9, self.T10, self.T11, self.T12,self.T1,self.T2, self.T3, self.T4]
+
+        frame4 = Frame(self.Apply)
+        frame4.grid(row=7, columnspan = 5)
+
+        Label(frame4, text = "Tuesday").grid(row= 0, column= 1, sticky = W)
+
+        for i in range(8):
+            Checkbutton(frame4, variable = T[i], text= times[i]).grid(row=2, column = i, sticky=W)
+
+        #Wednesday
+        self.W9 = IntVar()
+        self.W10 = IntVar()
+        self.W11 = IntVar()
+        self.W12 = IntVar()
+        self.W1 = IntVar()
+        self.W2 = IntVar()
+        self.W3 = IntVar()
+        self.W4 = IntVar()
+
+        Wd = [self.W9, self.W10, self.W11, self.W12,self.W1,self.W2, self.W3, self.W4]
+        frame5 = Frame(self.Apply)
+        frame5.grid(row=8, columnspan = 5)
+
+        Label(frame5, text = "Wednesday").grid(row= 0, column= 1, sticky = W)
+
+        for i in range(8):
+            Checkbutton(frame5, variable = Wd[i], text = times[i]).grid(row=2, column = i, sticky=W)
+
+        #Thursday
+        self.Tr9 = IntVar()
+        self.Tr10 = IntVar()
+        self.Tr11 = IntVar()
+        self.Tr12 = IntVar()
+        self.Tr1 = IntVar()
+        self.Tr2 = IntVar()
+        self.Tr3 = IntVar()
+        self.Tr4 = IntVar()
+
+        Tr = [self.Tr9, self.Tr10, self.Tr11, self.Tr12,self.Tr1,self.Tr2, self.Tr3, self.Tr4]
+        frame6 = Frame(self.Apply)
+        frame6.grid(row=9, columnspan = 5)
+
+        Label(frame6, text = "Thursday").grid(row= 0, column= 1, sticky = W)
+        
+        for i in range(8):
+            Checkbutton(frame6, variable = Tr[i], text = times[i]).grid(row=2, column = i, sticky=W)
+
+        #Friday
+        self.F9 = IntVar()
+        self.F10 = IntVar()
+        self.F11 = IntVar()
+        self.F12 = IntVar()
+        self.F1 = IntVar()
+        self.F2 = IntVar()
+        self.F3 = IntVar()
+        self.F4 = IntVar()
+        F = [self.F9, self.F10, self.F11, self.F12,self.F1,self.F2, self.F3, self.F4]
+
+        frame7 = Frame(self.Apply)
+        frame7.grid(row=10, columnspan = 5)
+
+        Label(frame7, text = "Friday").grid(row= 0, column= 1, sticky = W)
+        for i in range(8):
+            Checkbutton(frame7, variable = F[i], text = times[i]).grid(row=2, column = i, sticky=W)
+
+        Button(self.Apply, text = "OK", width =10, command = self.OkApply).grid(row = 11, column = 0, sticky = W)
+        Button(self.Apply, text= "Cancel", width = 10, command= self.cancelApply).grid(row = 11, column = 2, sticky = W)
+
+    def OkApply(self):
+        try:
+            db = self.Connect()
+        except:
+            return None
+        coursevar = [self.c1, self.c2, self.c3, self.c4, self.c5, self.c6, self.c7]
+        gta = [self.GTA_1, self.GTA_2, self.GTA_3, self.GTA_4, self.GTA_5, self.GTA_6, self.GTA_7]
+        gtid = self.GTID.get()
+        a = self.Tphone.get()
+        GPA = self.GPA.get()
+        if float(GPA)< 3.0:
+            messagebox.showwarning("Error", "Your GPA must be over 3.0 to apply as a tutor.")
+            return
+
+        fn = self.FN.get()
+        ln = self.LN.get()
+        email = self.Email.get()
+        grad = self.grad.get()
+        Semester = self.semester.get()
+
+        for i in range(len(gta)):
+            if grad == "UG" and gta[i].get() ==1:
+                messagebox.showwarning("Error" , "Only graduate students can be GTAs.")
+                return
+            
+        #TUTOR TABLE
+        cursor = db.cursor()
+        tutname= []
+        sqltut = 'select * from Tutor'
+        cursor.execute(sqltut)
+        for i in cursor:
+            tutname.append(i[0])
+        if gtid not in tutname:
+            sql = "INSERT INTO Tutor (TUTOR_GTID, PhoneNumber, GPA) values(%s, %s, %s)"
+            cursor.execute(sql, (gtid, a, GPA))
+
+        #TUTORS TABLE
+        for i in range(len(coursevar)):
+            if coursevar[i].get() == 1 and gta[i].get() ==1:
+                sql = 'insert into Tutors (TUTOR_GTID, SCHOOL, COURSE_NUM, GTA) values(%s, %s, %s, %s)'
+                cursor.execute(sql, (gtid, self.course[i][0], self.course[i][1], '1'))
+            elif coursevar[i].get() == 1 and gta[i].get() ==0:
+                sql = 'insert into Tutors (TUTOR_GTID, SCHOOL, COURSE_NUM, GTA) values(%s, %s, %s, %s)'
+                cursor.execute(sql, (gtid, self.course[i][0], self.course[i][1], '0'))
+
+        #TUTOR TIME SLOTS TABLE
+        M = [self.M9,self.M10,self.M11,self.M12,self.M1,self.M2,self.M3,self.M4]
+        Times = ["9am", "10am", "11am", "12pm", "1pm", "2pm", "3pm", "4pm"]
+        for i in range(8):
+            mon = M[i].get()
+            if mon == 1:
+                sql_m = "INSERT INTO TutorTimeSlots (TUTOR_GTID, SEMESTER, WEEKDAY, TIMES) VALUES(%s, %s, %s, %s)"
+                cursor.execute(sql_m, (gtid, Semester, "Monday", Times[i]))
+        T = [self.T9,self.T10,self.T11,self.T12,self.T1,self.T2,self.T3,self.T4]
+        for i in range(8):
+            tue = T[i].get()
+            if tue == 1:
+                sql_t = "INSERT INTO TutorTimeSlots (TUTOR_GTID, SEMESTER, WEEKDAY, TIMES) VALUES(%s, %s, %s, %s)"
+                cursor.execute(sql_t, (gtid, Semester, "Tuesday", Times[i]))
+                
+        W = [self.W9,self.W10,self.W11,self.W12,self.W1,self.W2,self.W3,self.W4]
+        for i in range(8):
+            wed = W[i].get()
+            if wed == 1:
+                sql_w = "INSERT INTO TutorTimeSlots (TUTOR_GTID, SEMESTER, WEEKDAY, TIMES) VALUES(%s, %s, %s, %s)"
+                cursor.execute(sql_w, (gtid, Semester, "Wednesday", Times[i]))
+                
+        Tr = [self.Tr9,self.Tr10,self.Tr11,self.Tr12,self.Tr1,self.Tr2,self.Tr3,self.Tr4]
+        for i in range(8):
+            tr = Tr[i].get()
+            if tr == 1:
+                sql_tr = "INSERT INTO TutorTimeSlots (TUTOR_GTID, SEMESTER, WEEKDAY, TIMES) VALUES(%s, %s, %s, %s)"
+                cursor.execute(sql_tr, (gtid, Semester, "Thursday", Times[i]))
+                
+        F = [self.F9,self.F10,self.F11,self.F12,self.F1,self.F2,self.F3,self.F4]
+        for i in range(8):
+            fri = F[i].get()
+            if fri == 1:
+                sql_f = "INSERT INTO TutorTimeSlots (TUTOR_GTID, SEMESTER, WEEKDAY, TIMES) VALUES(%s, %s, %s, %s)"
+                cursor.execute(sql_f, (gtid, Semester, "Friday", Times[i]))
+
+        x = 0
+        for i in range(len(coursevar)):
+            if coursevar[i].get() == 1:
+                x=x+1
+
+        y=0
+        for i in range(len(M)):
+            if M[i].get() == 1:
+                y = y+1
+            if T[i].get() == 1:
+                y = y + 1
+            if W[i].get()== 1:
+                y = y + 1
+            if Tr[i].get()== 1:
+                y = y + 1 
+            if F[i].get()==1:
+                y = y + 1
+##        print(x, y)
+
+        if y < 5:
+            messagebox.showwarning("Error", "You must be available for at least 5 hours per week.")
+            return None
+        if 3*x > y:
+            messagebox.showwarning("Error", "You must be available for at least 3 hours per course.")
+            return None
+        
+##        self.Apply.withdraw()  ##NOT WORKING!! SIMILAR PROBLEM WITH SCHEDULING!!
+        self.mainMenu()
+
+    def cancelApply(self):
+        self.Apply.withdraw()
+        self.mainG.deiconify()
+
+#__________________________________________________
+
+    def FindTutorSchedule(self):
+        self.mainG.withdraw()
+        self.schedule = Toplevel()
+        self.schedule.title('Find My Schedule')
+        self.schedule.resizable(height=FALSE, width=FALSE)
+        Label(self.schedule, text = "Find Tutor Schedule").grid(row =0, column = 1, sticky = EW)
+        Label(self.schedule, text = "Enter GTID: ").grid(row =4, column = 0, sticky = W)
+        self.GTIDsched = Entry(self.schedule)
+        self.GTIDsched.grid(row = 4, column = 3)
+        Button(self.schedule, text = "OK", width = 10, command =self.DisplaySchedule ).grid(row =5, column =0)
+
+    def DisplaySchedule(self):
+        gtid = self.GTID.get()
+        gtid1 = self.GTIDsched.get()
+        if gtid != gtid1:
+            messagebox.showwarning("Error", "Please enter the correct GTID.")
+        else:
+            endtuple = []
+            try:
+                db = self.Connect()
+            except:
+                return None
+            name = ""
+            
+            cursor = db.cursor()
+            omg = db.cursor()
+            sql = 'select (FirstName) from Student where STUD_GTID = "{0}"'.format(gtid)
+            cursor.execute(sql)
+            for i in cursor:
+                name = name + i[0] + " "
+            sql1 = "select (LastName) from Student where STUD_GTID = '{0}'".format(gtid)
+            cursor.execute(sql1)
+            for i in cursor:
+                name = name + i[0]
+                
+            frame = Frame(self.schedule)
+            frame.grid(row = 6, columnspan = 6)
+
+            frame1 = Frame(self.schedule)
+            frame1.grid(row = 7, columnspan =5) 
+
+            header = "Tutor Schedule for {0}".format(name)
+            Label(frame, text = header).grid(row = 0, column = 3)
+            Label(frame1, text = "Day").grid(row = 0, column = 0)
+            Label(frame1, text = "Time").grid(row =0, column = 1)
+            Label(frame1, text = "First Name").grid(row = 0, column = 2)
+            Label(frame1, text = "Last Name").grid(row = 0, column = 3)
+
+            Label(frame1, text = "Email").grid(row = 0, column = 4 )
+            Label(frame1, text = "Course").grid(row = 0, column = 5)
+
+            sqlhires = 'SELECT * FROM Hires WHERE TUTOR_GTID = %s'
+            cursor.execute(sqlhires, gtid)
+            for i in cursor:
+                alist = [i[0], i[2], i[3], i[4], i[5]]
+                endtuple.append(alist)
+
+            for i in range(len(endtuple)):
+                a = endtuple[i][0]
+                sqlname = 'select * from Student where STUD_GTID = %s'
+                cursor.execute(sqlname, a)
+                for j in cursor:
+##                    print(j)
+                    endtuple[i].append(j[2])
+                    endtuple[i].append(j[3])
+                    endtuple[i].append(j[1])
+##            print(endtuple)
+
+            for i in range(len(endtuple)):
+                s = endtuple[i][1]
+                c = endtuple[i][2]
+                astr = '{0} {1}'.format(s,c)
+                Label(frame1, text = endtuple[i][4]).grid(row = i+1, column = 0)
+                Label(frame1, text = endtuple[i][3]).grid(row = i+1, column = 1)
+                Label(frame1, text = endtuple[i][5]).grid(row = i+1, column = 2)
+                Label(frame1, text = endtuple[i][6]).grid(row = i+1, column = 3)
+                Label(frame1, text = endtuple[i][7]).grid(row = i+1, column = 4)
+                Label(frame1, text = astr).grid(row = i+1, column = 5)
+
+            Button(self.schedule, text= "OK", width = 10, command= self.ScheduleOK).grid(row = 10 , column =0)
+
+    def ScheduleOK(self):
+        self.schedule.withdraw()
+        self.mainMenu()
+
+
+
+
+
+
+################################################ PROFESSOR OPTIONS  ########################################################################
+
+
+
+    def Recommend(self): 
+        self.mainProf.withdraw()
+        self.rec = Toplevel()
+        self.rec.title('Rocommend A Tutor')
+        self.rec.resizable(height=FALSE, width=FALSE)
+
+        self.rv2 = StringVar()
+        self.rv2.set("0")
+        frame1 = Frame(self.rec)
+        frame1.grid(row = 1,column=0, sticky=W)
+
+        Label(self.rec, text = "Professor Recommendation").grid(row= 0, column=0)
+        Label(frame1, text = "Student GTID").grid(row = 0, column =0)
+        self.T_GTID = Entry(frame1)
+        self.T_GTID.grid(row = 0, column =1)
+
+        frame3 = Frame(self.rec)
+        frame3.grid(row = 2, column =0, columnspan= 2, sticky = W)
+        Label(frame3, text = "Descriptive Evaluation").grid(row = 0, column = 0, sticky =W)
+        self.PDEval = Entry(frame3, width = 50)
+        self.PDEval.grid(row = 0, column = 1, sticky= W)
+
+        frame2 = Frame(self.rec)
+        frame2.grid(row = 3,column=0, columnspan = 2, sticky=W)
+
+        Label(frame2, text = "Numeric Evaluation").grid(row = 0, column = 0, sticky =W)
+        self.p1 = Radiobutton(frame2, variable = self.rv2, value = "1")
+        self.p1.grid(row = 4, column = 1, sticky =W)
+        self.p2 = Radiobutton(frame2, variable = self.rv2, value = "2")
+        self.p2.grid(row = 3, column = 1 , sticky =W)
+        self.p3 = Radiobutton(frame2, variable = self.rv2, value = "3")
+        self.p3.grid(row = 2, column = 1, sticky =W)
+        self.p4 = Radiobutton(frame2, variable = self.rv2, value = "4")
+        self.p4.grid( row = 1, column =1, sticky =W)
+    
+        Label(frame2, text = "4 Highly Recommended").grid(row = 1, column = 0, sticky =W)
+        Label(frame2, text = "3 Recommend").grid(row = 2, column = 0, sticky =W)
+        Label(frame2, text = "2 Recommend with reservations").grid(row = 3, column = 0, sticky =W)
+        Label(frame2, text = "1 Do Not Recommend").grid(row = 4, column = 0, sticky =W)
+
+        Button(self.rec, text = "Ok",width = 10, command = self.recOK).grid(row = 8, column = 0, sticky =W)
+
+    def recOK(self):
+        try:
+            db = self.Connect()
+        except:
+            return None
+        gtid = self.GTID.get()
+##        print(gtid)
+        a = self.T_GTID.get()
+##        print(a)
+        b = self.PDEval.get()
+##        print(b)
+        cursor = db.cursor()
+        num = 0 
+        if self.rv2.get() == "1":
+            num = '1'
+        elif self.rv2.get() == "2":
+            num = '2'
+        elif self.rv2.get() == "3":
+            num = '3'
+        elif self.rv2.get() == "4":
+            num = '4'
+##        print(self.rv2.get())
+        sql = "INSERT INTO Recommends (PROFESSOR_GTID, TUTOR_GTID, DescriptiveEvaluation, NumericRating) values (%s, %s, %s, %s)"
+        cursor.execute(sql, (gtid,a,b, num))
+##        self.rec.withdraw()
+
+
+
+
+
+
+################################################ ADMINISTRATOR OPTIONS  ########################################################################
+
+        
+    def adminSum1(self):
+##        self.mainAdmin.withdraw()
+        self.sum1=Toplevel()
+        self.fall=IntVar()
+        self.spring=IntVar()
+        self.summer=IntVar()
+
+        Label(self.sum1,text="Academic Year 2014").grid(row=0,column=0)
+        self.cc1=Checkbutton(self.sum1,variable=self.fall,text="Fall")
+        self.cc1.grid(row=0,column=1)
+        self.cc2=Checkbutton(self.sum1,variable=self.spring,text="Spring")
+        self.cc2.grid(row=0,column=2)
+        self.cc3=Checkbutton(self.sum1,variable=self.summer,text="Summer")
+        self.cc3.grid(row=0,column=3)
+        self.bb=Button(self.sum1,text="OK",command=self.adminSum1part2)
+        self.bb.grid(row=0,column=4)
+
+    def adminSum1part2(self):
+        frame1 = Frame(self.sum1)
+        frame1.grid(row = 1, columnspan = 5)
+
+        Label(frame1, text = "Course").grid(row = 0, column = 0)
+        Label(frame1, text = "Semester").grid(row =0, column = 1)
+        Label(frame1, text = "# Students").grid(row = 0, column = 2)
+        Label(frame1, text = "# Tutors").grid(row = 0 , column = 3)
+              
+        try:
+            db=self.Connect()
+        except:
+            return None
+              
+        cursor=db.cursor()
+        aList=["null","null","null"]
+              
+        if self.fall.get()==1:
+            aList[0]="Fall"
+              
+        if self.spring.get()==1:
+            aList[1]="Spring"
+
+        if self.summer.get()==1:
+            aList[2]="Summer"
+
+        aTup=tuple(aList)
+        sql="SELECT School, Course_Num, Semester, Count(UG_GTID), COUNT(DISTINCT Tutor_GTID) FROM Hires WHERE Semester=%s OR Semester=%s OR SEMESTER=%s GROUP BY School, Course_Num, Semester"
+        cursor.execute(sql,aTup)
+
+        newList=[]
+        for x in cursor:
+            bList=list(x)
+            cList=[bList[0]+" "+bList[1],bList[2],bList[3],bList[4]]
+            newList.append(cList)
+
+    #Delete courses that doubled
+        total=[]
+        finalList=["test"]
+        for i in range(len(newList)):
+            if newList[i][0] in finalList[i]:
+                finalList.append(["",newList[i][1],newList[i][2],newList[i][3]])
+            else:
+                finalList.append(newList[i])
+        del finalList[0]
+
+        fList=[]
+        for i in range(len(finalList)):
+            if finalList[i][0]!="":
+                fList.append(["","","",""])
+                fList.append(finalList[i])
+            else:
+                fList.append(finalList[i])
+        fList.append(["","","",""])         #
+        del fList[0]
+
+        position=[]
+        for i in range(len(fList)):
+            if fList[i][0]!="":
+                position.append(i)
+        position.append(len(fList))
+        del position[0]
+
+        numStudent=[]
+        for i in range(len(fList)):
+            numStudent.append(fList[i][2])
+
+        numTutor=[]
+        for i in range(len(fList)):
+            numTutor.append(fList[i][3])
+
+    #make the total of students and tutor
+        totalList=[]
+        for i in range(len(position)):
+            if i==0:
+                x=sum(numStudent[0:position[i]-1])
+                y=sum(numTutor[0:position[i]-1])
+                totalList.append([x,y])
+            else:
+                a=sum(numStudent[position[i-1]:position[i]-1])
+                b=sum(numTutor[position[i-1]:position[i]-1])
+                totalList.append([a,b])
+
+        for i in range(len(position)):
+            fList[position[i]-1]=["","Total",totalList[i][0],totalList[i][1]]
+
+        totalStudent=0
+        totalTutor=0
+        for i in range(len(totalList)):
+            totalStudent=totalStudent+totalList[i][0]
+            totalTutor=totalTutor+totalList[i][1]
+
+        rowNow=1
+        for i in range(len(fList)):
+            Label(frame1, text = fList[i][0]).grid(row=i+1, column=0)
+            Label(frame1, text = fList[i][1]).grid(row=i+1,column=1)
+            Label(frame1, text= fList[i][2]).grid(row=i+1,column=2)
+            Label(frame1, text= fList[i][3]).grid(row=i+1,column=3)
+            rowNow=rowNow+1
+
+        Label(frame1, text="").grid(row=rowNow, column=0)
+        Label(frame1, text="Grand Total").grid(row=rowNow, column=1)
+        Label(frame1, text=str(totalStudent)).grid(row=rowNow, column=2)
+        Label(frame1, text=str(totalTutor)).grid(row=rowNow, column=3)
+
+        self.bb.config(state=DISABLED)
+        self.cc1.config(state=DISABLED)
+        self.cc2.config(state=DISABLED)
+        self.cc3.config(state=DISABLED)
+              
+        Button(frame1, text="OK", command=self.sum1toMain).grid(row=rowNow+2, column=3)
+
+    def sum1toMain(self):
+        self.sum1.withdraw()
+        self.mainAdmin.deiconify()
+
+
+#_____________________________________________
+
+
+    def adminSum2(self):
+##        self.mainAdmin.withdraw()
+        self.sum2=Toplevel()
+        self.fall2=IntVar()
+        self.spring2=IntVar()
+        self.summer2=IntVar()
+        Label(self.sum2,text="Academic Year 2014").grid(row=0,column=0)
+        self.ccc1=Checkbutton(self.sum2,variable=self.fall2,text="Fall")
+        self.ccc1.grid(row=0,column=1)
+        self.ccc2=Checkbutton(self.sum2,variable=self.spring2,text="Spring")
+        self.ccc2.grid(row=0,column=2)
+        self.ccc3=Checkbutton(self.sum2,variable=self.summer2,text="Summer")
+        self.ccc3.grid(row=0,column=3)
+        self.bbb1 = Button(self.sum2,text="OK",command=self.adminSum2part2)
+        self.bbb1.grid(row=0,column=4)
+
+    def adminSum2part2(self):
+        frame1 = Frame(self.sum2)
+        frame1.grid(row = 1, columnspan = 5)
+        Label(frame1, text = "Course").grid(row = 0, column = 0)
+        Label(frame1, text = "Semester").grid(row =0, column = 1)
+        Label(frame1, text = "# TA").grid(row = 0, column = 2)
+        Label(frame1, text = "Avg Rating").grid(row = 0 , column = 3)
+        Label(frame1, text = "# non TA").grid(row=0,column=4)
+        Label(frame1, text="Avg Rating").grid(row=0,column=5)
+
+        Label(frame1, text = "CS 1301").grid(row = 1 , column = 0)
+        Label(frame1, text = "SPRING").grid(row = 1 , column = 1)
+        Label(frame1, text = "0").grid(row = 1 , column = 2)
+        Label(frame1, text = "NONE").grid(row = 1 , column = 3)
+        Label(frame1, text = "0").grid(row = 1 , column = 4)
+        Label(frame1, text = "NONE").grid(row = 1 , column = 5)
+
+        Label(frame1, text = "CS 1315").grid(row = 2 , column = 0)
+        Label(frame1, text = "SPRING").grid(row = 2 , column = 1)
+        Label(frame1, text = "1").grid(row = 2 , column = 2)
+        Label(frame1, text = "NONE").grid(row = 2 , column = 3)
+        Label(frame1, text = "1").grid(row = 2 , column = 4)
+        Label(frame1, text = "NONE").grid(row = 2, column = 5)
+        
+        Label(frame1, text = "CS 1371").grid(row =3  , column = 0)
+        Label(frame1, text = "SPRING").grid(row = 3 , column = 1)
+        Label(frame1, text = "0").grid(row = 3, column = 2)
+        Label(frame1, text = "NONE").grid(row = 3, column = 3)
+        Label(frame1, text = "0").grid(row = 3, column = 4)
+        Label(frame1, text = "NONE").grid(row = 3 , column = 5)
+        
+        Label(frame1, text = "CS 2316").grid(row = 4 , column = 0)
+        Label(frame1, text = "SPRING").grid(row = 4 , column = 1)
+        Label(frame1, text = "1").grid(row = 4 , column = 2)
+        Label(frame1, text = "4.0").grid(row = 4 , column = 3)
+        Label(frame1, text = "0").grid(row = 4, column = 4)
+        Label(frame1, text = "NONE").grid(row = 4 , column = 5)
+        
+        Label(frame1, text = "CS 4400").grid(row = 5 , column = 0)
+        Label(frame1, text = "SPRING").grid(row = 5 , column = 1)
+        Label(frame1, text = "0").grid(row = 5, column = 2)
+        Label(frame1, text = "NONE").grid(row = 5, column = 3)
+        Label(frame1, text = "2").grid(row = 5, column = 4)
+        Label(frame1, text = "NONE").grid(row = 5, column = 5)
+
+        Label(frame1, text="").grid(row=0,column=5)
+        
+        try:
+            db=self.Connect()
+        except:
+            return None
+
+        cursor=db.cursor()
+        aList=["null","null","null"]
+        if self.fall2.get()==1:
+            aList[0]="Fall"
+        if self.spring2.get()==1:
+            aList[1]="Spring"
+        if self.summer2.get()==1:
+            aList[2]="Summer"
+              
+        aTup=tuple(aList)
+              
+        sql1='CREATE OR REPLACE VIEW Admin1(School, Number, Semester, TA, TA_Avg_Rating) AS SELECT Tutors.School, Tutors.Course_Num, TutorTimeSlots.Semester, COUNT(DISTINCT Tutors.Tutor_GTID), AVG(Rating.Num_Rate) FROM Tutors, Rating, TutorTimeSlots  WHERE Tutors.GTA = 1 AND Tutors.Course_Num = Rating.Course_Num AND Tutors.School = Rating.School AND Tutors.Tutor_GTID = Rating.Tutor_GTID AND Rating.Tutor_GTID = TutorTimeSlots.Tutor_GTID AND (TutorTimeSlots.Semester=%s OR TutorTimeSlots.Semester=%s OR TutorTimeSlots.Semester=%s) GROUP BY Tutors.School, Tutors.Course_Num, TutorTimeSlots.Semester'
+        cursor.execute(sql1,aTup)
+
+        sql2='CREATE OR REPLACE VIEW Admin2(School, Number, Semester, nonTA, nonTA_Avg_Rating) AS SELECT Tutors.School, Tutors.Course_Num, TutorTimeSlots.Semester, COUNT(DISTINCT Tutors.Tutor_GTID), AVG(Rating.Num_Rate) FROM Tutors, Rating, TutorTimeSlots  WHERE Tutors.GTA = 0 AND Tutors.Course_Num = Rating.Course_Num AND Tutors.School = Rating.School AND Tutors.Tutor_GTID = Rating.Tutor_GTID AND Rating.Tutor_GTID = TutorTimeSlots.Tutor_GTID AND (TutorTimeSlots.Semester=%s OR TutorTimeSlots.Semester=%s OR TutorTimeSlots.Semester=%s) GROUP BY Tutors.School, Tutors.Course_Num, TutorTimeSlots.Semester'
+        cursor.execute(sql2,aTup)
+
+        TA=[]
+        sql3='SELECT * FROM Admin1'
+        cursor.execute(sql3)
+        for x in cursor:
+            TA.append(x)
+
+        nonTA=[]
+        sql4="SELECT * FROM Admin2"
+        cursor.execute(sql4)
+        for x in cursor:
+            nonTA.append(x)
+
+    #For TA
+        rowNow=1
+        if "Fall" in aTup:
+            for i in range(len(TA)):
+                if "FALL" in TA[i]:
+                        Label(frame1, text=TA[i][0]+" "+TA[i][1]).grid(row=rowNow+1, column=0)
+                        Label(frame1, text=TA[i][2]).grid(row=rowNow+1, column=1)
+                        Label(frame1, text=TA[i][3]).grid(row=rowNow+1, column=2)
+                        Label(frame1, text=TA[i][4]).grid(row=rowNow+1, column=3)
+                        rowNow=rowNow+1
+
+        if "Spring" in aTup:
+            for i in range(len(TA)):
+                if "SPRING" in TA[i]:
+                    Label(frame1, text=TA[i][0]+" "+TA[i][1]).grid(row=rowNow+1, column=0)
+                    Label(frame1, text=TA[i][2]).grid(row=rowNow+1, column=1)
+                    Label(frame1, text=TA[i][3]).grid(row=rowNow+1, column=2)
+                    Label(frame1, text=TA[i][4]).grid(row=rowNow+1, column=3)
+                    rowNow=rowNow+1
+
+        if "Summer" in aTup:
+            for i in range(len(TA)):
+                if "SUMMER" in TA[i]:
+                    Label(frame1, text=TA[i][0]+" "+TA[i][1]).grid(row=rowNow+1, column=0)
+                    Label(frame1, text=TA[i][2]).grid(row=rowNow+1, column=1)
+                    Label(frame1, text=TA[i][3]).grid(row=rowNow+1, column=2)
+                    Label(frame1, text=TA[i][4]).grid(row=rowNow+1, column=3)
+                    rowNow=rowNow+1
+        rowNow=rowNow+1
+
+        d=db.cursor()
+        d.execute('SELECT TUTOR_GTID, SCHOOL, COURSE_NUM, GTA FROM Tutors JOIN (SELECT GRAD_GTID FROM (SELECT GRAD_GTID FROM Grad JOIN Tutor ON Grad.GRAD_GTID = Tutor.TUTOR_GTID) g JOIN Tutors ON g.GRAD_GTID = Tutors.TUTOR_GTID ) h ON Tutors.TUTOR_GTID=h.GRAD_GTID')
+        for i in d:
+            print(i)
+        d=db.cursor()
+        d.execute('SELECT DISTINCT TUTOR_GTID, SEMESTER FROM Hires JOIN Grad ON Hires.TUTOR_GTID = Grad.GRAD_GTID WHERE SEMESTER = %s OR SEMESTER = %s OR SEMESTER = %s', (
+            self.summer2.get(), self.spring2.get(), self.fall2.get()))
+        for i in d:
+            print(i)
+        
+    #count the average of the average TA Rating
+        sql10="SELECT School, Number, AVG(TA_Avg_Rating) FROM Admin1 WHERE Semester=%s OR Semester=%s OR Semester=%s GROUP BY School, number, Semester"
+        cursor.execute(sql10,aTup)
+
+        averageTAlist=[]
+        for x in cursor:
+            averageTAlist.append(x)
+        print (averageTAlist)
+
+##        for i in range(len(averageTAlist)):
+##            Label(frame1, text="Average of the Avg Rating for " + averageTAlist[i][0]+" "+averageTAlist[i][1] +" is " +str(averageTAlist[i][2])).grid(row=rowNow+1, columnspan=4)
+##            rowNow=rowNow+1
+
+    #for non-TA
+
+##        Label(frame1, text = "Course").grid(row = rowNow+1, column = 0)
+##        Label(frame1, text = "Semester").grid(row =rowNow+1, column = 1)
+              
+##        rowNow=rowNow+1
+##        if "Fall" in aTup:
+##            for i in range(len(nonTA)):
+##                if "FALL" in nonTA[i]:
+##                    Label(frame1, text=nonTA[i][0]+" "+nonTA[i][1]).grid(row=rowNow+1, column=0)
+##                    Label(frame1, text=nonTA[i][2]).grid(row=rowNow+1, column=1)
+##                    Label(frame1, text=nonTA[i][3]).grid(row=rowNow+1, column=2)
+##                    Label(frame1, text=nonTA[i][4]).grid(row=rowNow+1, column=3)
+##                    rowNow=rowNow+1
+##
+##        if "Spring" in aTup:
+##            for i in range(len(nonTA)):
+##                if "SPRING" in nonTA[i]:
+##                    Label(frame1, text=nonTA[i][0]+" "+nonTA[i][1]).grid(row=rowNow+1, column=0)
+##                    Label(frame1, text=nonTA[i][2]).grid(row=rowNow+1, column=1)
+##                    Label(frame1, text=nonTA[i][3]).grid(row=rowNow+1, column=2)
+##                    Label(frame1, text=nonTA[i][4]).grid(row=rowNow+1, column=3)
+##                    rowNow=rowNow+1
+##
+##        if "Summer" in aTup:
+##            for i in range(len(nonTA)):
+##                if "SUMMER" in nonTA[i]:
+##                    Label(frame1, text=nonTA[i][0]+" "+nonTA[i][1]).grid(row=rowNow+1, column=0)
+##                    Label(frame1, text=nonTA[i][2]).grid(row=rowNow+1, column=1)
+##                    Label(frame1, text=nonTA[i][3]).grid(row=rowNow+1, column=2)
+##                    Label(frame1, text=nonTA[i][4]).grid(row=rowNow+1, column=3)
+##                    rowNow=rowNow+1
+##
+##        sql11="SELECT School, Number, AVG(nonTA_Avg_Rating) FROM Admin2 WHERE Semester=%s OR Semester=%s OR Semester=%s GROUP BY School, number, Semester"
+##        cursor.execute(sql11,aTup)
+##
+##        averagenonTAlist=[]
+##        for x in cursor:
+##            averagenonTAlist.append(x)
+##
+##        for i in range(len(averagenonTAlist)):
+##            Label(frame1, text="Average of the Avg Rating for " + averagenonTAlist[i][0]+" "+averagenonTAlist[i][1] +" is " +str(averagenonTAlist[i][2])).grid(row=rowNow+1, columnspan=4)
+##            rowNow=rowNow+1
+##
+##        self.ccc1.config(state=DISABLED)
+##        self.ccc2.config(state=DISABLED)
+##        self.ccc3.config(state=DISABLED)
+##        self.bbb1.config(state= DISABLED)
+##
+        Button(frame1, text="OK", command=self.sum2toMain).grid(row=rowNow+2, column=3)
+
+
+    def sum2toMain(self):
+        self.sum2.withdraw()
+        self.mainAdmin.deiconify()
+
+        
+
+
+
+
+
+win = Tk()
+
+root= PhaseIII(win)
+
+win.mainloop()
+
